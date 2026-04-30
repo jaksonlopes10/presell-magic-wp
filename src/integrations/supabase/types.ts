@@ -14,7 +14,84 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      presells: {
+        Row: {
+          briefing: Json
+          content: Json
+          cover_image_url: string | null
+          created_at: string
+          cta_color: string | null
+          cta_url: string | null
+          id: string
+          slug: string | null
+          status: string
+          template: string
+          title: string
+          updated_at: string
+          wp_post_id: number | null
+          wp_post_type: string | null
+          wp_post_url: string | null
+        }
+        Insert: {
+          briefing?: Json
+          content?: Json
+          cover_image_url?: string | null
+          created_at?: string
+          cta_color?: string | null
+          cta_url?: string | null
+          id?: string
+          slug?: string | null
+          status?: string
+          template?: string
+          title?: string
+          updated_at?: string
+          wp_post_id?: number | null
+          wp_post_type?: string | null
+          wp_post_url?: string | null
+        }
+        Update: {
+          briefing?: Json
+          content?: Json
+          cover_image_url?: string | null
+          created_at?: string
+          cta_color?: string | null
+          cta_url?: string | null
+          id?: string
+          slug?: string | null
+          status?: string
+          template?: string
+          title?: string
+          updated_at?: string
+          wp_post_id?: number | null
+          wp_post_type?: string | null
+          wp_post_url?: string | null
+        }
+        Relationships: []
+      }
+      wp_settings: {
+        Row: {
+          app_password: string
+          id: number
+          site_url: string
+          updated_at: string
+          username: string
+        }
+        Insert: {
+          app_password?: string
+          id?: number
+          site_url?: string
+          updated_at?: string
+          username?: string
+        }
+        Update: {
+          app_password?: string
+          id?: number
+          site_url?: string
+          updated_at?: string
+          username?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
