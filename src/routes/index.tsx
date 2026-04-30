@@ -133,7 +133,7 @@ function Dashboard() {
         </div>
       ) : (
         <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {presells.map((p) => (
+          {presells.map((p: typeof presells[number]) => (
             <li key={p.id} className="group flex flex-col overflow-hidden rounded-xl border border-border bg-card transition hover:shadow-elegant">
               <div className="aspect-[16/9] overflow-hidden bg-muted">
                 {p.cover_image_url ? (
