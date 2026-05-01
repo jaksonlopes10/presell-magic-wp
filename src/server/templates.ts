@@ -17,6 +17,7 @@ export type PresellContent = {
   bullets: string[];
   social_proof: string;
   cta_label: string;
+  trust_badges?: string[]; // ex: ["Compra segura", "7 dias de garantia", "Frete grátis"]
 };
 
 export type RenderInput = {
