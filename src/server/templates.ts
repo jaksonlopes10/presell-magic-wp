@@ -1,7 +1,8 @@
 // HTML templates for presells. Pure functions, safe to import on client and server.
-export type TemplateId = "review" | "advertorial" | "comparison" | "story" | "alert";
+export type TemplateId = "review" | "advertorial" | "comparison" | "story" | "alert" | "bridge";
 
 export const TEMPLATES: { id: TemplateId; name: string; description: string }[] = [
+  { id: "bridge", name: "Bridge Page", description: "Minimalista: logo, produto, CTA e selos. Estilo AquaSculpt." },
   { id: "review", name: "Review", description: "Análise honesta do produto com prós e contras." },
   { id: "advertorial", name: "Advertorial", description: "Formato matéria de portal de notícias." },
   { id: "comparison", name: "Comparação", description: "Produto X vs concorrente." },
