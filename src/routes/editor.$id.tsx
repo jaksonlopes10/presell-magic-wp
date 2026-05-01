@@ -275,6 +275,19 @@ function Editor() {
               <Field label="Texto do botão (CTA)">
                 <Input value={content.cta_label} onChange={(e) => setContent({ ...content, cta_label: e.target.value })} />
               </Field>
+              <Field label={`Selos de confiança (1 por linha)${template === "bridge" ? "" : " — aparece no template Bridge Page"}`}>
+                <Textarea
+                  rows={3}
+                  value={(content.trust_badges ?? []).join("\n")}
+                  onChange={(e) =>
+                    setContent({
+                      ...content,
+                      trust_badges: e.target.value.split("\n").map((s) => s.trim()).filter(Boolean),
+                    })
+                  }
+                  placeholder={"Compra segura\n7 dias de garantia\nFrete grátis\nPagamento 100% protegido"}
+                />
+              </Field>
             </div>
           </Section>
 
