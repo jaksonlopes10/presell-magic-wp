@@ -14,6 +14,7 @@ const ContentSchema = z.object({
   bullets: z.array(z.string()).default([]),
   social_proof: z.string().default(""),
   cta_label: z.string().default("Quero saber mais"),
+  trust_badges: z.array(z.string()).default([]),
 });
 
 const BriefingSchema = z.object({
