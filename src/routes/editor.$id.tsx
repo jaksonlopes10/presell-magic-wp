@@ -27,6 +27,7 @@ type ContentT = {
   bullets: string[];
   social_proof: string;
   cta_label: string;
+  trust_badges: string[];
 };
 
 type BriefingT = {
@@ -49,7 +50,7 @@ function Editor() {
     ...((initial.briefing as Partial<BriefingT>) ?? {}),
   });
   const [content, setContent] = useState<ContentT>({
-    headline: "", subheadline: "", body: "", bullets: [], social_proof: "", cta_label: "Quero saber mais",
+    headline: "", subheadline: "", body: "", bullets: [], social_proof: "", cta_label: "Quero saber mais", trust_badges: [],
     ...((initial.content as Partial<ContentT>) ?? {}),
   });
   const [coverUrl, setCoverUrl] = useState<string | null>(initial.cover_image_url ?? null);
@@ -126,7 +127,7 @@ function Editor() {
     setGenerating(true);
     try {
       const r = await generateCopy({ data: { template, briefing } });
-      setContent(r.content);
+      setContent({ trust_badges: [], ...r.content });
       toast.success("Copy gerada com sucesso!");
     } catch (e) {
       toast.error((e as Error).message);
@@ -273,6 +274,19 @@ function Editor() {
               </Field>
               <Field label="Texto do botão (CTA)">
                 <Input value={content.cta_label} onChange={(e) => setContent({ ...content, cta_label: e.target.value })} />
+              </Field>
+              <Field label={`Selos de confiança (1 por linha)${template === "bridge" ? "" : " — aparece no template Bridge Page"}`}>
+                <Textarea
+                  rows={3}
+                  value={(content.trust_badges ?? []).join("\n")}
+                  onChange={(e) =>
+                    setContent({
+                      ...content,
+                      trust_badges: e.target.value.split("\n").map((s) => s.trim()).filter(Boolean),
+                    })
+                  }
+                  placeholder={"Compra segura\n7 dias de garantia\nFrete grátis\nPagamento 100% protegido"}
+                />
               </Field>
             </div>
           </Section>
