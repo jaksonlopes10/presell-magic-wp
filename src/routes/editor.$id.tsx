@@ -50,7 +50,7 @@ function Editor() {
     ...((initial.briefing as Partial<BriefingT>) ?? {}),
   });
   const [content, setContent] = useState<ContentT>({
-    headline: "", subheadline: "", body: "", bullets: [], social_proof: "", cta_label: "Quero saber mais",
+    headline: "", subheadline: "", body: "", bullets: [], social_proof: "", cta_label: "Quero saber mais", trust_badges: [],
     ...((initial.content as Partial<ContentT>) ?? {}),
   });
   const [coverUrl, setCoverUrl] = useState<string | null>(initial.cover_image_url ?? null);
