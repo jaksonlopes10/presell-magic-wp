@@ -138,6 +138,16 @@ export function renderTemplate(input: RenderInput): string {
         ${productImg}
         ${bulletsBlock}
         <p style="margin:24px 0;"><a href="${ctaUrl}" rel="nofollow sponsored noopener" target="_blank" style="display:inline-block;background:${ctaColor};color:#fff;padding:18px 40px;border-radius:8px;font-weight:700;text-decoration:none;font-size:20px;box-shadow:0 4px 14px rgba(22,163,74,0.3);">${ctaLabel} →</a></p>
+        ${
+          content.trust_badges?.length
+            ? `<div style="display:flex;flex-wrap:wrap;justify-content:center;gap:8px;max-width:560px;margin:16px auto 8px;">${content.trust_badges
+                .map(
+                  (b) =>
+                    `<span style="display:inline-flex;align-items:center;gap:6px;background:#f3f4f6;color:#374151;padding:6px 12px;border-radius:999px;font-size:13px;font-weight:600;border:1px solid #e5e7eb;"><span style="color:#16a34a;">✓</span>${escapeHtml(b)}</span>`
+                )
+                .join("")}</div>`
+            : ""
+        }
         ${social ? `<div style="max-width:520px;margin:24px auto;">${social}</div>` : ""}
         <div style="margin-top:32px;padding-top:24px;border-top:1px solid #e5e7eb;">
           <p style="color:#9ca3af;font-size:12px;line-height:1.6;margin:8px 0;">
