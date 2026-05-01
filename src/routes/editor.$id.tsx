@@ -127,7 +127,7 @@ function Editor() {
     setGenerating(true);
     try {
       const r = await generateCopy({ data: { template, briefing } });
-      setContent(r.content);
+      setContent({ trust_badges: [], ...r.content });
       toast.success("Copy gerada com sucesso!");
     } catch (e) {
       toast.error((e as Error).message);
