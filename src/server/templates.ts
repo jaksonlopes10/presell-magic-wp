@@ -1,7 +1,8 @@
 // HTML templates for presells. Pure functions, safe to import on client and server.
-export type TemplateId = "review" | "advertorial" | "comparison" | "story" | "alert";
+export type TemplateId = "review" | "advertorial" | "comparison" | "story" | "alert" | "bridge";
 
 export const TEMPLATES: { id: TemplateId; name: string; description: string }[] = [
+  { id: "bridge", name: "Bridge Page", description: "Minimalista: logo, produto, CTA e selos. Estilo AquaSculpt." },
   { id: "review", name: "Review", description: "Análise honesta do produto com prós e contras." },
   { id: "advertorial", name: "Advertorial", description: "Formato matéria de portal de notícias." },
   { id: "comparison", name: "Comparação", description: "Produto X vs concorrente." },
@@ -116,6 +117,41 @@ export function renderTemplate(input: RenderInput): string {
          ${social}
          ${cta}`
       );
+    case "bridge": {
+      // Minimalista estilo AquaSculpt: marca + estrelas + produto + CTA + selos
+      const brand = headline || "Brand®";
+      const tagline = subheadline;
+      const ctaUrl = escapeHtml(cta_url || "#");
+      const ctaColor = /^#[0-9a-fA-F]{3,8}$/.test(cta_color || "") ? cta_color! : "#16a34a";
+      const ctaLabel = escapeHtml(content.cta_label || "Click here now to access");
+      const productImg = cover_image_url
+        ? `<a href="${ctaUrl}" rel="nofollow sponsored noopener" target="_blank"><img src="${escapeHtml(cover_image_url)}" alt="${brand}" style="max-width:520px;width:100%;height:auto;margin:0 auto;display:block;" /></a>`
+        : "";
+      const bulletsBlock = content.bullets?.length
+        ? `<ul style="max-width:520px;margin:24px auto;padding-left:20px;color:#374151;font-size:16px;">${content.bullets.map((b) => `<li style="margin:6px 0;">${escapeHtml(b)}</li>`).join("")}</ul>`
+        : "";
+      return `<div style="max-width:720px;margin:0 auto;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;text-align:center;padding:24px 16px;color:#111827;">
+        <h1 style="font-size:42px;line-height:1.1;color:#374771;font-weight:700;margin:0 0 4px;">${escapeHtml(brand)}</h1>
+        <p style="color:#f59e0b;font-size:24px;margin:0 0 8px;letter-spacing:2px;">★★★★★</p>
+        ${tagline ? `<p style="color:#6b7280;font-size:16px;margin:0 0 24px;">${tagline}</p>` : ""}
+        ${productImg}
+        ${bulletsBlock}
+        <p style="margin:24px 0;"><a href="${ctaUrl}" rel="nofollow sponsored noopener" target="_blank" style="display:inline-block;background:${ctaColor};color:#fff;padding:18px 40px;border-radius:8px;font-weight:700;text-decoration:none;font-size:20px;box-shadow:0 4px 14px rgba(22,163,74,0.3);">${ctaLabel} →</a></p>
+        ${social ? `<div style="max-width:520px;margin:24px auto;">${social}</div>` : ""}
+        <div style="margin-top:32px;padding-top:24px;border-top:1px solid #e5e7eb;">
+          <p style="color:#9ca3af;font-size:12px;line-height:1.6;margin:8px 0;">
+            <a href="#" style="color:#9ca3af;text-decoration:none;">Privacy Policy</a> |
+            <a href="#" style="color:#9ca3af;text-decoration:none;">Terms &amp; Conditions</a> |
+            <a href="#" style="color:#9ca3af;text-decoration:none;">Refunds</a> |
+            <a href="#" style="color:#9ca3af;text-decoration:none;">Contact Us</a>
+          </p>
+          <p style="color:#9ca3af;font-size:11px;line-height:1.5;margin:12px auto;max-width:560px;">
+            All statements and results presented on this website are for informational purposes only. They are not specific medical advice for any individual. Results may vary. Consult your physician before starting any new product. This page may contain affiliate links and we may earn a commission if you purchase through them.
+          </p>
+          <p style="color:#9ca3af;font-size:11px;margin:8px 0;">© ${new Date().getFullYear()} ${escapeHtml(brand)}. All Rights Reserved.</p>
+        </div>
+      </div>`;
+    }
     case "review":
     default:
       return wrapper(

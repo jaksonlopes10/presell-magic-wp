@@ -12,6 +12,8 @@ const TEMPLATE_INSTRUCTIONS: Record<TemplateId, string> = {
     "Tom: storytelling em primeira pessoa, antes e depois. Conte a transformação, com emoção e detalhes concretos.",
   alert:
     "Tom: descoberta/alerta urgente. Crie senso de novidade ('o que ninguém te contou'), sem prometer coisas falsas.",
+  bridge:
+    "Tom: bridge page minimalista. Headline = nome da marca/produto curto (ex: 'AquaSculpt®'). Subheadline = tagline curta de 1 linha. Body curto. Bullets = 3 a 4 benefícios objetivos. CTA imperativo em inglês ou português conforme o briefing (ex: 'Click here now to access').",
 };
 
 export type GenerateInput = {

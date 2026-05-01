@@ -5,7 +5,7 @@ import { loadWpSettings, saveWpSettings, wpTestConnection, wpPublish } from "./w
 import { generatePresellCopy } from "./ai.server";
 import { renderTemplate, type PresellContent, type TemplateId } from "./templates";
 
-const TemplateEnum = z.enum(["review", "advertorial", "comparison", "story", "alert"]);
+const TemplateEnum = z.enum(["review", "advertorial", "comparison", "story", "alert", "bridge"]);
 
 const ContentSchema = z.object({
   headline: z.string().default(""),
