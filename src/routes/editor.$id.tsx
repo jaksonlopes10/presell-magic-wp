@@ -27,6 +27,7 @@ type ContentT = {
   bullets: string[];
   social_proof: string;
   cta_label: string;
+  trust_badges: string[];
 };
 
 type BriefingT = {
