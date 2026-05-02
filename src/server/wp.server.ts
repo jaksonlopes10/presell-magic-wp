@@ -94,7 +94,13 @@ export async function updateWpSite(
       .neq("id", id);
     if (e0) throw new Error(e0.message);
   }
-  const patch: Record<string, unknown> = {};
+  const patch: {
+    name?: string;
+    site_url?: string;
+    username?: string;
+    app_password?: string;
+    is_default?: boolean;
+  } = {};
   if (input.name !== undefined) patch.name = input.name.trim();
   if (input.site_url !== undefined) patch.site_url = normalizeUrl(input.site_url);
   if (input.username !== undefined) patch.username = input.username.trim();
