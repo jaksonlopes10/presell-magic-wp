@@ -31,6 +31,7 @@ export type Database = {
           wp_post_id: number | null
           wp_post_type: string | null
           wp_post_url: string | null
+          wp_site_id: string | null
         }
         Insert: {
           briefing?: Json
@@ -48,6 +49,7 @@ export type Database = {
           wp_post_id?: number | null
           wp_post_type?: string | null
           wp_post_url?: string | null
+          wp_site_id?: string | null
         }
         Update: {
           briefing?: Json
@@ -65,8 +67,17 @@ export type Database = {
           wp_post_id?: number | null
           wp_post_type?: string | null
           wp_post_url?: string | null
+          wp_site_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "presells_wp_site_id_fkey"
+            columns: ["wp_site_id"]
+            isOneToOne: false
+            referencedRelation: "wp_sites"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       wp_settings: {
         Row: {
@@ -86,6 +97,39 @@ export type Database = {
         Update: {
           app_password?: string
           id?: number
+          site_url?: string
+          updated_at?: string
+          username?: string
+        }
+        Relationships: []
+      }
+      wp_sites: {
+        Row: {
+          app_password: string
+          created_at: string
+          id: string
+          is_default: boolean
+          name: string
+          site_url: string
+          updated_at: string
+          username: string
+        }
+        Insert: {
+          app_password?: string
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          name: string
+          site_url?: string
+          updated_at?: string
+          username?: string
+        }
+        Update: {
+          app_password?: string
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          name?: string
           site_url?: string
           updated_at?: string
           username?: string

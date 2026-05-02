@@ -10,13 +10,19 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
-  getPresell, savePresell, generateCopy, renderPreview, uploadCoverImage, publishToWp,
+  getPresell, savePresell, generateCopy, renderPreview, uploadCoverImage, publishToWp, listWpSitesFn,
 } from "@/server/presells.functions";
 import { TEMPLATES, type TemplateId } from "@/server/templates";
 
 export const Route = createFileRoute("/editor/$id")({
   component: Editor,
-  loader: ({ params }) => getPresell({ data: { id: params.id } }),
+  loader: async ({ params }) => {
+    const [presell, sitesRes] = await Promise.all([
+      getPresell({ data: { id: params.id } }),
+      listWpSitesFn(),
+    ]);
+    return { presell, sites: sitesRes.sites };
+  },
   head: () => ({ meta: [{ title: "Editor — Presell Builder" }] }),
 });
 
@@ -40,7 +46,8 @@ type BriefingT = {
 
 function Editor() {
   const router = useRouter();
-  const initial = Route.useLoaderData();
+  const { presell: initial, sites } = Route.useLoaderData();
+  const defaultSite = sites.find((s) => s.is_default) ?? sites[0] ?? null;
 
   const [title, setTitle] = useState(initial.title);
   const [slug, setSlug] = useState(initial.slug ?? "");
@@ -57,6 +64,7 @@ function Editor() {
   const [ctaUrl, setCtaUrl] = useState(initial.cta_url ?? "");
   const [ctaColor, setCtaColor] = useState(initial.cta_color ?? "#16a34a");
   const [postType, setPostType] = useState<"page" | "post">((initial.wp_post_type as "page" | "post") ?? "page");
+  const [siteId, setSiteId] = useState<string | null>(initial.wp_site_id ?? defaultSite?.id ?? null);
 
   const [previewHtml, setPreviewHtml] = useState<string>("");
   const [previewMode, setPreviewMode] = useState<"desktop" | "mobile">("desktop");
@@ -104,6 +112,7 @@ function Editor() {
       cta_url: ctaUrl || null,
       cta_color: ctaColor,
       wp_post_type: postType,
+      wp_site_id: siteId,
     };
   }
 
@@ -173,11 +182,14 @@ function Editor() {
   }
 
   async function handlePublish() {
+    if (!siteId) {
+      toast.error("Cadastre um site WordPress em Configurações primeiro.");
+      return;
+    }
     setPublishing(true);
     try {
-      // Save first to ensure latest content is on the server
       await savePresell({ data: buildPayload() });
-      const r = await publishToWp({ data: { id: initial.id, status: "publish" } });
+      const r = await publishToWp({ data: { id: initial.id, status: "publish", site_id: siteId } });
       toast.success("Publicada no WordPress!");
       window.open(r.url, "_blank", "noopener");
       router.invalidate();
@@ -202,17 +214,38 @@ function Editor() {
             placeholder="Título da presell"
           />
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {sites.length > 0 && (
+            <Select value={siteId ?? ""} onValueChange={(v) => setSiteId(v || null)}>
+              <SelectTrigger className="h-9 w-[200px]">
+                <SelectValue placeholder="Escolher site WP" />
+              </SelectTrigger>
+              <SelectContent>
+                {sites.map((s) => (
+                  <SelectItem key={s.id} value={s.id}>
+                    {s.name}{s.is_default ? " ★" : ""}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
           <Button variant="outline" onClick={() => handleSave(false)} disabled={saving}>
             <Save className="mr-2 h-4 w-4" />
             {saving ? "Salvando…" : "Salvar"}
           </Button>
-          <Button onClick={handlePublish} disabled={publishing} className="bg-gradient-primary shadow-elegant">
+          <Button onClick={handlePublish} disabled={publishing || !siteId} className="bg-gradient-primary shadow-elegant">
             {publishing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
             {publishing ? "Publicando…" : "Publicar no WordPress"}
           </Button>
         </div>
       </div>
+
+      {sites.length === 0 && (
+        <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-100">
+          Nenhum site WordPress cadastrado.{" "}
+          <Link to="/settings" className="font-semibold underline">Adicionar agora</Link>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         {/* LEFT — Editor */}

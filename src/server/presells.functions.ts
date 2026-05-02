@@ -1,7 +1,16 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { loadWpSettings, saveWpSettings, wpTestConnection, wpPublish } from "./wp.server";
+import {
+  listWpSites,
+  getWpSite,
+  getDefaultWpSite,
+  createWpSite,
+  updateWpSite,
+  deleteWpSite,
+  wpTestConnectionFor,
+  wpPublish,
+} from "./wp.server";
 import { generatePresellCopy } from "./ai.server";
 import { renderTemplate, type PresellContent, type TemplateId } from "./templates";
 
@@ -25,44 +34,76 @@ const BriefingSchema = z.object({
   tone: z.string().default(""),
 });
 
-// ---------- WP Settings ----------
+// ---------- WP Sites (multi) ----------
 
-export const getWpSettings = createServerFn({ method: "GET" }).handler(async () => {
-  const s = await loadWpSettings();
-  // Mask the password when sending to the client
+export const listWpSitesFn = createServerFn({ method: "GET" }).handler(async () => {
+  const sites = await listWpSites();
+  // Mask passwords for the client
   return {
-    site_url: s.site_url,
-    username: s.username,
-    has_password: Boolean(s.app_password),
+    sites: sites.map((s) => ({
+      id: s.id,
+      name: s.name,
+      site_url: s.site_url,
+      username: s.username,
+      is_default: s.is_default,
+      has_password: Boolean(s.app_password),
+    })),
   };
 });
 
-export const updateWpSettings = createServerFn({ method: "POST" })
+export const createWpSiteFn = createServerFn({ method: "POST" })
   .inputValidator((d) =>
     z
       .object({
+        name: z.string().min(1).max(120),
         site_url: z.string().min(1).max(500),
         username: z.string().min(1).max(200),
         app_password: z.string().min(1).max(500),
+        is_default: z.boolean().optional(),
       })
-      .parse(d)
+      .parse(d),
+  )
+  .handler(async ({ data }) => createWpSite(data));
+
+export const updateWpSiteFn = createServerFn({ method: "POST" })
+  .inputValidator((d) =>
+    z
+      .object({
+        id: z.string().uuid(),
+        name: z.string().min(1).max(120).optional(),
+        site_url: z.string().min(1).max(500).optional(),
+        username: z.string().min(1).max(200).optional(),
+        app_password: z.string().max(500).optional(),
+        is_default: z.boolean().optional(),
+      })
+      .parse(d),
   )
   .handler(async ({ data }) => {
-    await saveWpSettings(data);
+    const { id, ...patch } = data;
+    await updateWpSite(id, patch);
     return { ok: true };
   });
 
-export const testWpConnection = createServerFn({ method: "POST" }).handler(async () => {
-  const s = await loadWpSettings();
-  return wpTestConnection(s);
-});
+export const deleteWpSiteFn = createServerFn({ method: "POST" })
+  .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data }) => {
+    await deleteWpSite(data.id);
+    return { ok: true };
+  });
+
+export const testWpSiteFn = createServerFn({ method: "POST" })
+  .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data }) => {
+    const site = await getWpSite(data.id);
+    return wpTestConnectionFor(site);
+  });
 
 // ---------- Presells CRUD ----------
 
 export const listPresells = createServerFn({ method: "GET" }).handler(async () => {
   const { data, error } = await supabaseAdmin
     .from("presells")
-    .select("id,title,slug,template,status,wp_post_url,updated_at,cover_image_url")
+    .select("id,title,slug,template,status,wp_post_url,updated_at,cover_image_url,wp_site_id")
     .order("updated_at", { ascending: false })
     .limit(200);
   if (error) throw new Error(error.message);
@@ -89,14 +130,16 @@ export const createPresell = createServerFn({ method: "POST" })
         template: TemplateEnum,
         title: z.string().min(1).max(255).default("Nova presell"),
       })
-      .parse(d)
+      .parse(d),
   )
   .handler(async ({ data }) => {
+    const def = await getDefaultWpSite();
     const { data: row, error } = await supabaseAdmin
       .from("presells")
       .insert({
         title: data.title,
         template: data.template,
+        wp_site_id: def?.id ?? null,
         briefing: { product: "", niche: "", benefits: "", audience: "", tone: "" },
         content: {
           headline: "",
@@ -105,6 +148,7 @@ export const createPresell = createServerFn({ method: "POST" })
           bullets: [],
           social_proof: "",
           cta_label: "Quero saber mais",
+          trust_badges: [],
         },
       })
       .select("id")
@@ -127,8 +171,9 @@ export const savePresell = createServerFn({ method: "POST" })
         cta_url: z.string().max(2000).nullable().optional(),
         cta_color: z.string().max(20).nullable().optional(),
         wp_post_type: z.enum(["page", "post"]).default("page"),
+        wp_site_id: z.string().uuid().nullable().optional(),
       })
-      .parse(d)
+      .parse(d),
   )
   .handler(async ({ data }) => {
     const { error } = await supabaseAdmin
@@ -143,6 +188,7 @@ export const savePresell = createServerFn({ method: "POST" })
         cta_url: data.cta_url ?? null,
         cta_color: data.cta_color ?? "#16a34a",
         wp_post_type: data.wp_post_type,
+        wp_site_id: data.wp_site_id ?? null,
       })
       .eq("id", data.id);
     if (error) throw new Error(error.message);
@@ -179,6 +225,7 @@ export const duplicatePresell = createServerFn({ method: "POST" })
         cta_url: src.cta_url,
         cta_color: src.cta_color,
         wp_post_type: src.wp_post_type,
+        wp_site_id: src.wp_site_id,
         status: "draft",
       })
       .select("id")
@@ -196,7 +243,7 @@ export const generateCopy = createServerFn({ method: "POST" })
         template: TemplateEnum,
         briefing: BriefingSchema,
       })
-      .parse(d)
+      .parse(d),
   )
   .handler(async ({ data }) => {
     if (!data.briefing.product.trim() || !data.briefing.benefits.trim()) {
@@ -218,7 +265,7 @@ export const renderPreview = createServerFn({ method: "POST" })
         cta_url: z.string().max(2000).nullable().optional(),
         cta_color: z.string().max(20).nullable().optional(),
       })
-      .parse(d)
+      .parse(d),
   )
   .handler(async ({ data }) => {
     const html = renderTemplate({
@@ -240,9 +287,9 @@ export const uploadCoverImage = createServerFn({ method: "POST" })
         presell_id: z.string().uuid(),
         filename: z.string().min(1).max(200),
         content_type: z.string().min(1).max(100),
-        data_base64: z.string().min(1).max(8_000_000), // ~6MB raw
+        data_base64: z.string().min(1).max(8_000_000),
       })
-      .parse(d)
+      .parse(d),
   )
   .handler(async ({ data }) => {
     const buf = Buffer.from(data.data_base64, "base64");
@@ -259,55 +306,87 @@ export const uploadCoverImage = createServerFn({ method: "POST" })
 
 // ---------- Publish to WordPress ----------
 
+async function publishOne(presellId: string, opts: { siteId?: string | null; status: "publish" | "draft" }) {
+  const { data: row, error } = await supabaseAdmin
+    .from("presells")
+    .select("*")
+    .eq("id", presellId)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!row) throw new Error("Presell não encontrada.");
+
+  const targetSiteId = opts.siteId ?? row.wp_site_id;
+  let site = targetSiteId ? await getWpSite(targetSiteId) : await getDefaultWpSite();
+  if (!site) throw new Error("Nenhum site WordPress configurado.");
+
+  const html = renderTemplate({
+    template: row.template as TemplateId,
+    content: row.content as PresellContent,
+    cover_image_url: row.cover_image_url,
+    cta_url: row.cta_url,
+    cta_color: row.cta_color,
+  });
+
+  // Only reuse existing wp_post_id if publishing to the same site as before
+  const sameSite = row.wp_site_id === site.id;
+  const result = await wpPublish(site, {
+    postType: (row.wp_post_type as "page" | "post") ?? "page",
+    title: row.title,
+    slug: row.slug,
+    contentHtml: html,
+    status: opts.status,
+    existingId: sameSite ? row.wp_post_id ?? null : null,
+  });
+
+  const { error: e2 } = await supabaseAdmin
+    .from("presells")
+    .update({
+      wp_post_id: result.id,
+      wp_post_url: result.link,
+      wp_site_id: site.id,
+      status: opts.status === "publish" ? "published" : "draft",
+    })
+    .eq("id", row.id);
+  if (e2) throw new Error(e2.message);
+
+  return { url: result.link, id: result.id, site: { id: site.id, name: site.name } };
+}
+
 export const publishToWp = createServerFn({ method: "POST" })
   .inputValidator((d) =>
     z
       .object({
         id: z.string().uuid(),
         status: z.enum(["publish", "draft"]).default("publish"),
+        site_id: z.string().uuid().nullable().optional(),
       })
-      .parse(d)
+      .parse(d),
+  )
+  .handler(async ({ data }) => publishOne(data.id, { siteId: data.site_id ?? null, status: data.status }));
+
+export const publishBatchToWp = createServerFn({ method: "POST" })
+  .inputValidator((d) =>
+    z
+      .object({
+        ids: z.array(z.string().uuid()).min(1).max(50),
+        site_id: z.string().uuid().nullable().optional(),
+        status: z.enum(["publish", "draft"]).default("publish"),
+      })
+      .parse(d),
   )
   .handler(async ({ data }) => {
-    const { data: row, error } = await supabaseAdmin
-      .from("presells")
-      .select("*")
-      .eq("id", data.id)
-      .maybeSingle();
-    if (error) throw new Error(error.message);
-    if (!row) throw new Error("Presell não encontrada.");
-
-    const settings = await loadWpSettings();
-    if (!settings.site_url || !settings.username || !settings.app_password) {
-      throw new Error("Configure o WordPress antes de publicar.");
+    const results: Array<{ id: string; ok: boolean; url?: string; error?: string; siteName?: string }> = [];
+    for (const id of data.ids) {
+      try {
+        const r = await publishOne(id, { siteId: data.site_id ?? null, status: data.status });
+        results.push({ id, ok: true, url: r.url, siteName: r.site.name });
+      } catch (e) {
+        results.push({ id, ok: false, error: (e as Error).message });
+      }
     }
-
-    const html = renderTemplate({
-      template: row.template as TemplateId,
-      content: row.content as PresellContent,
-      cover_image_url: row.cover_image_url,
-      cta_url: row.cta_url,
-      cta_color: row.cta_color,
-    });
-
-    const result = await wpPublish(settings, {
-      postType: (row.wp_post_type as "page" | "post") ?? "page",
-      title: row.title,
-      slug: row.slug,
-      contentHtml: html,
-      status: data.status,
-      existingId: row.wp_post_id ?? null,
-    });
-
-    const { error: e2 } = await supabaseAdmin
-      .from("presells")
-      .update({
-        wp_post_id: result.id,
-        wp_post_url: result.link,
-        status: data.status === "publish" ? "published" : "draft",
-      })
-      .eq("id", row.id);
-    if (e2) throw new Error(e2.message);
-
-    return { url: result.link, id: result.id };
+    return {
+      results,
+      ok_count: results.filter((r) => r.ok).length,
+      fail_count: results.filter((r) => !r.ok).length,
+    };
   });
