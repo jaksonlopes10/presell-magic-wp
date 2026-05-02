@@ -1,6 +1,6 @@
 import { Outlet, Link, createRootRoute, HeadContent, Scripts, useRouterState } from "@tanstack/react-router";
 import { Toaster } from "sonner";
-import { Sparkles, LayoutDashboard, Settings as SettingsIcon } from "lucide-react";
+import { Sparkles, LayoutDashboard, Settings as SettingsIcon, BookOpen } from "lucide-react";
 import appCss from "../styles.css?url";
 
 function NotFoundComponent() {
@@ -87,6 +87,7 @@ function RootComponent() {
           </Link>
           <nav className="flex items-center gap-1">
             <NavLink to="/" icon={LayoutDashboard}>Presells</NavLink>
+            <NavLink to="/guide" icon={BookOpen}>Guia</NavLink>
             <NavLink to="/settings" icon={SettingsIcon}>WordPress</NavLink>
           </nav>
         </div>
