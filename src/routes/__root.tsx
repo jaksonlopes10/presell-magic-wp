@@ -88,7 +88,7 @@ function RootComponent() {
           <nav className="flex items-center gap-1">
             <NavLink to="/" icon={LayoutDashboard}>Presells</NavLink>
             <NavLink to="/guide" icon={BookOpen}>Guia</NavLink>
-            <NavLink to="/settings" icon={SettingsIcon}>WordPress</NavLink>
+            <NavLink to="/settings" icon={SettingsIcon}>Sites WP</NavLink>
           </nav>
         </div>
       </header>
