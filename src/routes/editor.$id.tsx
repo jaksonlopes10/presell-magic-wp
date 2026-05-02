@@ -214,17 +214,38 @@ function Editor() {
             placeholder="Título da presell"
           />
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {sites.length > 0 && (
+            <Select value={siteId ?? ""} onValueChange={(v) => setSiteId(v || null)}>
+              <SelectTrigger className="h-9 w-[200px]">
+                <SelectValue placeholder="Escolher site WP" />
+              </SelectTrigger>
+              <SelectContent>
+                {sites.map((s) => (
+                  <SelectItem key={s.id} value={s.id}>
+                    {s.name}{s.is_default ? " ★" : ""}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
           <Button variant="outline" onClick={() => handleSave(false)} disabled={saving}>
             <Save className="mr-2 h-4 w-4" />
             {saving ? "Salvando…" : "Salvar"}
           </Button>
-          <Button onClick={handlePublish} disabled={publishing} className="bg-gradient-primary shadow-elegant">
+          <Button onClick={handlePublish} disabled={publishing || !siteId} className="bg-gradient-primary shadow-elegant">
             {publishing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
             {publishing ? "Publicando…" : "Publicar no WordPress"}
           </Button>
         </div>
       </div>
+
+      {sites.length === 0 && (
+        <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-100">
+          Nenhum site WordPress cadastrado.{" "}
+          <Link to="/settings" className="font-semibold underline">Adicionar agora</Link>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         {/* LEFT — Editor */}
